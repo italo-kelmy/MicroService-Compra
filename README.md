@@ -1,14 +1,16 @@
 # 💳 Compra Service
 
-Este microserviço representa o momento final da compra. Ele recebe os dados do carrinho e consulta o `loja_service` para validar a quantidade em estoque e registrar a compra no banco de dados.
+Este microserviço finaliza as compras recebidas.  
+Com a nova integração **RabbitMQ**, ele escuta automaticamente a fila `compra.fila` e processa as compras de forma **assíncrona**, sem depender de requisições diretas.
 
 ---
 
 ## 🎯 Responsabilidades
 
-- Validar a compra
-- Reduzir estoque no catálogo
-- Registrar os dados da compra no banco
+- Escutar mensagens de compra enviadas pelo `carrinho_service`
+- Validar estoque no `loja_service`
+- Reduzir quantidade no catálogo
+- Registrar a compra no banco
 
 ---
 
@@ -16,27 +18,30 @@ Este microserviço representa o momento final da compra. Ele recebe os dados do 
 
 - Spring Boot + REST API
 - Spring Data JPA + MySQL
-- Feign Client (comunicação com `loja_service`)
+- Spring Cloud OpenFeign
 - Eureka Client
+- **Spring AMQP (RabbitMQ)** com listener `@RabbitListener`
+- Fila configurada: `compra.fila`
 
 ---
 
 ## 🌐 Integração
 
-- Recebe os dados de um produto do cliente
-- Se comunica com o `loja_service` para verificar e descontar a quantidade
-- Registra no banco a quantidade e o ID da compra
+- **Assincronamente**: recebe mensagens do `carrinho_service` via RabbitMQ
+- **Sincronamente**: valida estoque com `loja_service` via Feign
 
 ---
 
-## 🚀 Endpoint Principal
+## 🚀 Funcionamento RabbitMQ
 
-- `POST /produto/finalizar` → Finaliza a compra
+1. O `carrinho_service` envia para a fila `compra.fila` os dados do produto
+2. O `CompraListener` consome a mensagem automaticamente
+3. O `CompraService` finaliza a compra e registra no banco
 
 ---
 
 ## 🧠 Aprendizado
 
-- Requisições seguras entre serviços com Feign
-- Validação de regras de negócio antes de salvar dados
-- Fluxo realista de finalização de uma compra
+- Implementação de consumidores RabbitMQ (`@RabbitListener`)
+- Processamento de eventos assíncronos
+- Melhoria de desempenho e desacoplamento do fluxo
